@@ -1,15 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { jobStatus } from './schema.js';
+import { runStatus } from './schema.js';
 
-describe('job schema enums', () => {
-  it('keeps the public job states stable', () => {
-    expect(jobStatus.enumValues).toEqual([
-      'queued',
-      'rejected',
-      'in-progress',
-      'completed',
-      'canceled',
-      'failed',
-    ]);
+describe('run schema enums', () => {
+  it('keeps the public run states stable', () => {
+    expect(runStatus.enumValues).toEqual(['queued', 'running', 'succeeded', 'failed']);
   });
 });

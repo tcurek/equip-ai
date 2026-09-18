@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "dev": "pnpm -r dev",
-    "db:migrate": "cat packages/db/migrations/0001_jobs.sql | docker compose exec -T postgres psql -U equip -d equip_ai",
+    "db:migrate": "cat packages/db/migrations/0001_runs.sql | docker compose exec -T postgres psql -U equip -d equip_ai",
     "build": "pnpm -r build",
     "test": "vitest run",
     "lint": "eslint .",

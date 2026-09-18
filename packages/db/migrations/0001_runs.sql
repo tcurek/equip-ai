@@ -1,22 +1,20 @@
-CREATE TYPE job_status AS ENUM (
+CREATE TYPE run_status AS ENUM (
   'queued',
-  'rejected',
-  'in-progress',
-  'completed',
-  'canceled',
+  'running',
+  'succeeded',
   'failed'
 );
 
-CREATE TABLE jobs (
+CREATE TABLE runs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name varchar(256) NOT NULL,
   kind varchar(128) NOT NULL,
-  status job_status NOT NULL DEFAULT 'queued',
+  status run_status NOT NULL DEFAULT 'queued',
   owner varchar(320),
   creator varchar(320) NOT NULL,
   external_ref varchar(256),
-  parent_job_id uuid REFERENCES jobs(id),
-  root_job_id uuid REFERENCES jobs(id),
+  parent_run_id uuid REFERENCES runs(id),
+  root_run_id uuid REFERENCES runs(id),
   priority integer NOT NULL DEFAULT 0,
   attempts integer NOT NULL DEFAULT 0,
   max_attempts integer NOT NULL DEFAULT 1,
@@ -28,12 +26,13 @@ CREATE TABLE jobs (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX jobs_status_idx ON jobs (status);
-CREATE INDEX jobs_owner_idx ON jobs (owner);
-CREATE INDEX jobs_creator_idx ON jobs (creator);
-CREATE INDEX jobs_external_ref_idx ON jobs (external_ref);
-CREATE INDEX jobs_parent_job_id_idx ON jobs (parent_job_id);
-CREATE INDEX jobs_root_job_id_idx ON jobs (root_job_id);
+CREATE INDEX runs_status_idx ON runs (status);
+CREATE INDEX runs_queue_idx ON runs (status, priority DESC, created_at) WHERE status = 'queued';
+CREATE INDEX runs_owner_idx ON runs (owner);
+CREATE INDEX runs_creator_idx ON runs (creator);
+CREATE INDEX runs_external_ref_idx ON runs (external_ref);
+CREATE INDEX runs_parent_run_id_idx ON runs (parent_run_id);
+CREATE INDEX runs_root_run_id_idx ON runs (root_run_id);
 
 CREATE FUNCTION set_updated_at()
 RETURNS trigger AS $$
@@ -43,7 +42,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER jobs_set_updated_at
-BEFORE UPDATE ON jobs
+CREATE TRIGGER runs_set_updated_at
+BEFORE UPDATE ON runs
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();

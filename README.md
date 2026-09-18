@@ -21,12 +21,17 @@ Requires Node.js current LTS and pnpm.
 ```bash
 pnpm install
 cp .env.example .env
-docker compose up -d postgres
+docker compose up -d postgres redis
 pnpm db:migrate
 pnpm dev
 ```
 
-`pnpm db:migrate` creates the Postgres tables from `packages/db/migrations/0001_jobs.sql`.
+`pnpm db:migrate` creates the Postgres tables from `packages/db/migrations/0001_runs.sql`.
+
+Run lifecycle starts in `@equip-ai/runs`:
+
+- `enqueueRun(...)` inserts a queued run and adds a BullMQ queue item.
+- `createRunWorker()` picks queue items up, marks them `running`, runs the fake harness, then marks `succeeded` or `failed`.
 
 Useful scripts:
 
