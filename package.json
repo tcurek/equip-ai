@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "dev": "pnpm -r dev",
+    "db:migrate": "cat packages/db/migrations/0001_jobs.sql | docker compose exec -T postgres psql -U equip -d equip_ai",
     "build": "pnpm -r build",
     "test": "vitest run",
     "lint": "eslint .",
@@ -37,6 +38,8 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@types/node": "^26.6.1",
+    "@types/pg": "^8.23.1",
     "eslint": "^10.10.0",
     "prettier": "^3.9.7",
     "tsx": "^4.23.13",

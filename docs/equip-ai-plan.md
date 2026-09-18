@@ -116,6 +116,10 @@ Plugin contracts:
 ## Data And Observability
 
 - Store app data in Postgres with a small migration system.
+- Start job management with a `jobs` table for lifecycle state, `kind` (`coding`, `investigation`, `query`, etc.), ownership, external references, retry/priority metadata, and parent/root job relationships. Subagents are execution details inside a job, not separate jobs unless they need independent queueing/cancel/retry.
+- Add `job_events` next for append-only status/log/audit entries (`job_id`, event type, message, data, created time). This avoids overloading the mutable `jobs` row with history.
+- Add `job_artifacts` when workers produce files/results (`job_id`, name, URI/path, MIME type, size). Keep blobs out of Postgres.
+- Add `job_assignments` only if ownership changes need history; until then `jobs.owner` is enough.
 - Store queue state in Redis through BullMQ.
 - Emit structured logs and OpenTelemetry-compatible spans.
 - Langfuse integration is optional via env/config, using current JS/TS tracing packages. Add only enough wiring to record runs, model generations, tools, retrievers, guardrails, and errors.
