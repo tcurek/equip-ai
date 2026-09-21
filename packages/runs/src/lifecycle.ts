@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { db, runs, type NewRun, type Run } from '../../db/src/index.js';
+import { db, runEvents, runs, type NewRun, type NewRunEvent, type Run } from '../../db/src/index.js';
 
 export type QueueRunInput = {
   name: string;
@@ -11,6 +11,10 @@ export type QueueRunInput = {
   maxAttempts?: number;
   metadata?: Record<string, unknown>;
 };
+
+export async function createRunEvent(values: NewRunEvent): Promise<void> {
+  await db.insert(runEvents).values(values);
+}
 
 export async function queueRun(input: QueueRunInput): Promise<Run> {
   const [run] = await db
@@ -27,6 +31,8 @@ export async function queueRun(input: QueueRunInput): Promise<Run> {
     })
     .returning();
 
+  await createRunEvent({ runId: run.id, type: 'queued', message: `Queued run: ${run.name}` });
+
   return run;
 }
 
@@ -40,6 +46,10 @@ export async function claimQueuedRun(id: string): Promise<Run | null> {
     })
     .where(and(eq(runs.id, id), eq(runs.status, 'queued')))
     .returning();
+
+  if (run) {
+    await createRunEvent({ runId: run.id, type: 'running', message: `Started run: ${run.name}` });
+  }
 
   return run ?? null;
 }
@@ -56,19 +66,24 @@ export async function markRunSucceeded(id: string, summary: string): Promise<Run
     .where(eq(runs.id, id))
     .returning();
 
+  await createRunEvent({ runId: run.id, type: 'succeeded', message: summary, data: { summary } });
+
   return run;
 }
 
 export async function markRunFailed(id: string, error: unknown): Promise<Run> {
+  const message = error instanceof Error ? error.message : String(error);
   const [run] = await db
     .update(runs)
     .set({
       status: 'failed',
-      error: error instanceof Error ? error.message : String(error),
+      error: message,
       finishedAt: new Date(),
     })
     .where(eq(runs.id, id))
     .returning();
+
+  await createRunEvent({ runId: run.id, type: 'failed', message, data: { error: message } });
 
   return run;
 }

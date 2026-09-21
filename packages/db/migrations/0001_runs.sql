@@ -34,6 +34,18 @@ CREATE INDEX runs_external_ref_idx ON runs (external_ref);
 CREATE INDEX runs_parent_run_id_idx ON runs (parent_run_id);
 CREATE INDEX runs_root_run_id_idx ON runs (root_run_id);
 
+CREATE TABLE run_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  run_id uuid NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  type varchar(128) NOT NULL,
+  message text,
+  data jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX run_events_run_id_created_at_idx ON run_events (run_id, created_at);
+CREATE INDEX run_events_type_idx ON run_events (type);
+
 CREATE FUNCTION set_updated_at()
 RETURNS trigger AS $$
 BEGIN

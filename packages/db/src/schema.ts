@@ -36,5 +36,22 @@ export const runs = pgTable(
   ],
 );
 
+export const runEvents = pgTable(
+  'run_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    runId: uuid('run_id')
+      .notNull()
+      .references(() => runs.id, { onDelete: 'cascade' }),
+    type: varchar('type', { length: 128 }).notNull(),
+    message: text('message'),
+    data: jsonb('data').notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('run_events_run_id_created_at_idx').on(table.runId, table.createdAt), index('run_events_type_idx').on(table.type)],
+);
+
 export type Run = typeof runs.$inferSelect;
 export type NewRun = typeof runs.$inferInsert;
+export type RunEvent = typeof runEvents.$inferSelect;
+export type NewRunEvent = typeof runEvents.$inferInsert;
